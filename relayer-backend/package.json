@@ -1,0 +1,52 @@
+{
+  "name": "relayer-backend",
+  "version": "1.0.0",
+  "description": "Gas-Fee Sponsor Relayer Backend Service",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "keywords": ["relayer", "meta-transaction", "gasless", "ethereum"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0",
+    "morgan": "^1.10.0",
+    "ethers": "^6.8.0",
+    "redis": "^4.6.0",
+    "pg": "^8.11.0",
+    "dotenv": "^16.3.0",
+    "joi": "^17.9.0",
+    "winston": "^3.10.0",
+    "prom-client": "^14.2.0",
+    "aws-sdk": "^2.1450.0",
+    "node-cron": "^3.0.2",
+    "axios": "^1.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "@types/express": "^4.17.17",
+    "@types/cors": "^2.8.13",
+    "@types/morgan": "^1.9.4",
+    "@types/pg": "^8.10.0",
+    "@types/jest": "^29.5.0",
+    "@types/node-cron": "^3.0.8",
+    "typescript": "^5.1.0",
+    "ts-node": "^10.9.0",
+    "jest": "^29.6.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "prettier": "^3.0.0",
+    "nodemon": "^3.0.0"
+  }
+}
+

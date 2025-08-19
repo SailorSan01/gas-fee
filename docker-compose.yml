@@ -1,0 +1,204 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: relayer-postgres
+    environment:
+      POSTGRES_DB: relayer_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - relayer-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: relayer-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - relayer-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --appendonly yes
+
+  # Hardhat Local Blockchain
+  hardhat:
+    build:
+      context: ./contracts
+      dockerfile: Dockerfile
+    container_name: relayer-hardhat
+    ports:
+      - "8545:8545"
+    networks:
+      - relayer-network
+    volumes:
+      - ./contracts:/app
+      - hardhat_cache:/app/cache
+      - hardhat_artifacts:/app/artifacts
+    environment:
+      - NODE_ENV=development
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8545"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    command: npx hardhat node --hostname 0.0.0.0
+
+  # Relayer Backend Service
+  relayer:
+    build:
+      context: ./relayer-backend
+      dockerfile: Dockerfile
+    container_name: relayer-backend
+    ports:
+      - "3000:3000"
+    environment:
+      # Server Configuration
+      PORT: 3000
+      HOST: 0.0.0.0
+      NODE_ENV: development
+      
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: relayer_db
+      DB_USER: postgres
+      DB_PASSWORD: password
+      DB_SSL: false
+      DB_MAX_CONNECTIONS: 20
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ""
+      REDIS_DB: 0
+      REDIS_KEY_PREFIX: "relayer:"
+      
+      # Blockchain Configuration
+      LOCALHOST_RPC_URL: http://hardhat:8545
+      ETHEREUM_RPC_URL: https://mainnet.infura.io/v3/YOUR_INFURA_KEY
+      BSC_RPC_URL: https://bsc-dataseed1.binance.org/
+      POLYGON_RPC_URL: https://polygon-rpc.com/
+      
+      # Relayer Configuration
+      SIGNER_TYPE: local
+      RELAYER_PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+      
+      # Gas Configuration
+      MAX_GAS_PRICE: 100000000000
+      MAX_GAS_LIMIT: 500000
+      GAS_MULTIPLIER: 1.2
+      
+      # Policy Configuration
+      MAX_TX_PER_HOUR: 100
+      MAX_TX_PER_DAY: 1000
+      MAX_VALUE_PER_TX: 1000000000000000000
+      
+      # Flashbots Configuration
+      FLASHBOTS_ENABLED: false
+      
+      # Monitoring Configuration
+      METRICS_ENABLED: true
+      LOG_LEVEL: info
+    networks:
+      - relayer-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      hardhat:
+        condition: service_healthy
+    volumes:
+      - ./relayer-backend:/app
+      - relayer_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # Prometheus (Optional - for metrics collection)
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: relayer-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - relayer-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    profiles:
+      - monitoring
+
+  # Grafana (Optional - for metrics visualization)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: relayer-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - relayer-network
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  hardhat_cache:
+    driver: local
+  hardhat_artifacts:
+    driver: local
+  relayer_logs:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  relayer-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+

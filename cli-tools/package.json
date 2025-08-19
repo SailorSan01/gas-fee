@@ -1,0 +1,47 @@
+{
+  "name": "relayer-cli",
+  "version": "1.0.0",
+  "description": "CLI tools for Gas-Fee Sponsor Relayer Bot",
+  "main": "dist/index.js",
+  "bin": {
+    "relayer-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write src/**/*.ts"
+  },
+  "keywords": ["cli", "relayer", "blockchain", "ethereum"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.0.0",
+    "ethers": "^6.8.0",
+    "axios": "^1.5.0",
+    "chalk": "^4.1.2",
+    "inquirer": "^8.2.6",
+    "ora": "^5.4.1",
+    "table": "^6.8.1",
+    "yaml": "^2.3.0",
+    "dotenv": "^16.3.0",
+    "csv-parser": "^3.0.0",
+    "csv-writer": "^1.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.5.0",
+    "@types/inquirer": "^8.2.6",
+    "@types/jest": "^29.5.0",
+    "typescript": "^5.1.0",
+    "ts-node": "^10.9.0",
+    "jest": "^29.6.0",
+    "ts-jest": "^29.1.0",
+    "eslint": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^6.4.0",
+    "@typescript-eslint/parser": "^6.4.0",
+    "prettier": "^3.0.0"
+  }
+}
+
