@@ -8,7 +8,7 @@ To get started with local development, follow these steps:
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/SailorSan1/gas-fee-sponsor-relayer-bot.git
+    git clone https://github.com/SailorSan01/gas-fee-sponsor-relayer-bot.git
     cd gas-fee-sponsor-relayer-bot
     ```
 
